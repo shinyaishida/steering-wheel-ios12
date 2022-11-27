@@ -18,6 +18,7 @@ enum GestureState: String {
 class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate, CBPeripheralManagerDelegate {
 
     private let RadianToDegree = 180 / Double.pi
+    private let OverrotationThreshold = 90
     private var gestureState: GestureState
     private var steeringState: NSInteger
     @IBOutlet weak var drivingStateLabel: UILabel!
@@ -75,11 +76,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     private func setSteeringState(yaw: Double) {
         let yawInDegree = Int(yaw * 180 / Double.pi)
-        if (yawInDegree != steeringState) {
-            steeringState = yawInDegree
-            writeOutgoingValue(data: "Steering \(yawInDegree)")
-            steeringStateLabel.text = "\(steeringState)"
+        if !overrotated(yawInDegree) && (yawInDegree != steeringState) {
+                steeringState = yawInDegree
+                writeOutgoingValue(data: "Steering \(yawInDegree)")
+                steeringStateLabel.text = "\(steeringState)"
         }
+    }
+    
+    private func overrotated(_ yawInDegree: Int) -> Bool {
+        let switched = yawInDegree * steeringState < 0
+        return switched && abs(yawInDegree) > OverrotationThreshold && abs(steeringState) > OverrotationThreshold
     }
     
     private func dumpMotion(_ motion: CMDeviceMotion) {
