@@ -70,17 +70,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                                                withHandler: { (motion, error) in
             guard let motion = motion, error == nil else { return }
             self.setSteeringState(yaw: motion.attitude.yaw)
-            self.dumpMotion(motion)
+//            self.dumpMotion(motion)
         })
     }
     
     private func setSteeringState(yaw: Double) {
         let yawInDegree = Int(yaw * 180 / Double.pi)
         if !overrotated(yawInDegree) && (yawInDegree != steeringState) {
-                steeringState = yawInDegree
-                writeOutgoingValue(data: "Steering \(yawInDegree)")
-                steeringStateLabel.text = "\(steeringState)"
+            updateSteeringState(yawInDegree)
         }
+    }
+    
+    private func updateSteeringState(_ yawInDegree: Int) {
+        steeringState = yawInDegree
+        writeOutgoingValue(data: "Steering \(steeringState)")
+        steeringStateLabel.text = "\(steeringState)"
     }
     
     private func overrotated(_ yawInDegree: Int) -> Bool {
@@ -88,12 +92,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         return switched && abs(yawInDegree) > OverrotationThreshold && abs(steeringState) > OverrotationThreshold
     }
     
-    private func dumpMotion(_ motion: CMDeviceMotion) {
-        let attitude = motion.attitude
+//    private func dumpMotion(_ motion: CMDeviceMotion) {
+//        let attitude = motion.attitude
 //        pitchLabel.text = "\(Int(attitude.pitch * RadianToDegree))"
 //        rollLabel.text = "\(Int(attitude.roll * RadianToDegree))"
 //        yawLabel.text = "\(Int(attitude.yaw * RadianToDegree))"
-    }
+//    }
     
     @objc private func sendDrivingState() {
         writeOutgoingValue(data: gestureState.rawValue)
@@ -202,6 +206,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             if characteristic.uuid.isEqual(CBUUIDs.Drive_Char_UUID) {
                 txCharacteristic = characteristic
                 print("TX Characteristic: \(txCharacteristic.uuid)")
+                updateSteeringState(0)
             }
         }
     }
